@@ -36,7 +36,7 @@ jobs:
       - name: Determine image tags
         id: tags
         run: |
-          IMAGE="${REGISTRY}/${IMAGE_NAME}"
+          IMAGE="$(echo "${REGISTRY}/${IMAGE_NAME}" | tr '[:upper:]' '[:lower:]')"
 
           if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
             VERSION="${GITHUB_REF_NAME#v}"
