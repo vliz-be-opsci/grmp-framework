@@ -1,0 +1,20 @@
+services:
+  orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: testorchgrmp
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config:/config:ro
+      - ./reports:/reports:rw
+    environment:
+      - CONFIG_DIR=/config
+      - REPORTS_HOST_PATH=${REPORTS_HOST_PATH}
+    working_dir: /app
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge

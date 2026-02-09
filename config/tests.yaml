@@ -1,0 +1,31 @@
+tests:
+  input-echo-1:
+    image: ghcr.io/vliz-be-opsci/grmp-test-implementations-input-echo-test:main
+    config:
+      url: https://brugge-ldes.geomobility.eu/observations
+      max-redirects: 3
+      timeout: 10
+      check-http-availability: false
+      check-https-availability: true
+    
+  input-echo-2:
+    image: ghcr.io/vliz-be-opsci/grmp-test-implementations-input-echo-test:main
+    config:
+      url: https://brugge-ldes.geomobility.eu/observations
+      supports-content-types:
+        - text/turtle
+        - application/trig
+      check-response-body-conformity: true
+
+  input-echo-3:
+    image: ghcr.io/vliz-be-opsci/grmp-test-implementations-input-echo-test:main
+    config:
+      url:
+      supports-content-types:
+        - text/turtle
+        - application/trig
+      check-response-body-conformity: true
+
+  input-echo-4:
+    image: ghcr.io/vliz-be-opsci/grmp-test-implementations-input-echo-test:main
+    config:
