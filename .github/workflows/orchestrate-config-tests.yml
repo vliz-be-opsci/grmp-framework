@@ -25,7 +25,7 @@ jobs:
           mkdir -p reports
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            -v ${{ github.workspace }}/config/tests.yaml:/config/tests.yaml:ro \
+            -v ${{ github.workspace }}/config:/config:ro \
             -v ${{ github.workspace }}/reports:/reports:rw \
             -e REPORTS_HOST_PATH=${{ github.workspace }}/reports \
             ghcr.io/${{ github.repository }}:main
