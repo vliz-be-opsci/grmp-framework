@@ -1,5 +1,5 @@
 tests:
-  input-echo-1:
+  input-echo-standard:
     image: ghcr.io/vliz-be-opsci/grmp-test-implementations-input-echo-test:main
     config:
       url: https://brugge-ldes.geomobility.eu/observations
@@ -8,7 +8,7 @@ tests:
       check-http-availability: false
       check-https-availability: true
     
-  input-echo-2:
+  input-echo-standard-2:
     image: ghcr.io/vliz-be-opsci/grmp-test-implementations-input-echo-test:main
     config:
       url: https://brugge-ldes.geomobility.eu/observations
@@ -17,7 +17,7 @@ tests:
         - application/trig
       check-response-body-conformity: true
 
-  input-echo-3:
+  input-echo-fail:
     image: ghcr.io/vliz-be-opsci/grmp-test-implementations-input-echo-test:main
     config:
       url:
@@ -26,6 +26,6 @@ tests:
         - application/trig
       check-response-body-conformity: true
 
-  input-echo-4:
+  input-echo-skip:
     image: ghcr.io/vliz-be-opsci/grmp-test-implementations-input-echo-test:main
     config:
