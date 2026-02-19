@@ -69,7 +69,7 @@ class TestOrchestrator:
 
     def load_all_configs(self) -> Dict[str, Any]:
         """Recursively load all YAML files under config_dir, merge them into one config."""
-        yaml_files = list(self.config_dir.rglob("*.yaml")) + list(self.config_dir.rglob("*.yml"))
+        yaml_files = sorted(list(self.config_dir.rglob("*.yaml")) + list(self.config_dir.rglob("*.yml")))
 
         if not yaml_files:
             raise FileNotFoundError(f"No YAML files found under {self.config_dir}")
