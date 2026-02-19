@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 from typing import Dict, List, Any
 from junitparser import JUnitXml
+import warnings
 
 class TestOrchestrator:
     def __init__(self, config_dir: str = None, reports_dir: str = None):
@@ -54,18 +55,64 @@ class TestOrchestrator:
         print(f"Using fallback path: {fallback_path}")
         return fallback_path
         
-    def load_config(self) -> Dict[str, Any]:
-        """Load the YAML configuration file."""
-        config_file = self.config_dir / 'tests.yaml'
-        
+    def load_config(self, config_file: Path) -> Dict[str, Any]:
+        """Load a single YAML configuration file."""
         if not config_file.exists():
             raise FileNotFoundError(f"Configuration file not found: {config_file}")
         
-        with open(config_file, 'r') as f:
+        with open(config_file, "r") as f:
             config = yaml.safe_load(f)
-        
+
         print(f"Loaded configuration from {config_file}")
         return config
+
+
+    def load_all_configs(self) -> Dict[str, Any]:
+        """Recursively load all YAML files under config_dir, merge them into one config."""
+        yaml_files = sorted(list(self.config_dir.rglob("*.yaml")) + list(self.config_dir.rglob("*.yml")))
+
+        if not yaml_files:
+            raise FileNotFoundError(f"No YAML files found under {self.config_dir}")
+
+        combined_config: Dict[str, Any] = {"tests": {}}
+        test_name_counts: Dict[str, int] = {}
+
+        for yaml_file in yaml_files:
+            # Reuse load_config for loading each file
+            config = self.load_config(yaml_file)
+
+            if not config or "tests" not in config:
+                continue  # skip files without tests
+
+            for test_name, test_data in config["tests"].items():
+                original_name = test_name
+
+                # Handle duplicates, names are treated as opaque strings, 'input-echo-standard-2' is not considered a variant of 'input-echo-standard'
+                count = test_name_counts.get(original_name, 0)
+                if count > 0:
+                    candidate = f"{original_name}({count + 1})"
+                    while candidate in combined_config["tests"]:
+                        count += 1
+                        candidate = f"{original_name}({count + 1})"
+                    test_name = candidate
+                    warnings.warn(
+                        f"Duplicate test name '{original_name}' found in {yaml_file}. "
+                        f"Renaming to '{test_name}'.",
+                        stacklevel=2
+                    )
+
+                test_name_counts[original_name] = count + 1
+                test_name_counts[test_name] = 1
+
+                # Ensure 'config' node exists and add source file
+                test_data["config"] = test_data.get("config") or {}
+                test_data["config"]["source_file"] = str(yaml_file)
+
+                combined_config["tests"][test_name] = test_data
+
+            print(f"Processed tests from {yaml_file}")
+
+        return combined_config
     
     def pull_image(self, image: str) -> None:
         """Pull a Docker image from the registry."""
@@ -96,7 +143,9 @@ class TestOrchestrator:
         
         if test_config:
             for key, value in test_config.items():
-                if key != 'image':
+                if key == 'source_file':
+                    env_vars['SPECIAL_SOURCE_FILE'] = str(value)
+                elif key != 'image':
                     env_vars[f'TEST_{key.upper()}'] = str(value)
         
         print(f"  Environment variables: {env_vars}")
@@ -201,7 +250,7 @@ class TestOrchestrator:
         print("=" * 60)
         
         try:
-            config = self.load_config()
+            config = self.load_all_configs()
             
             tests = config.get('tests', {})
             if not tests:
