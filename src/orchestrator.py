@@ -66,12 +66,13 @@ class TestOrchestrator:
         github_repo = os.getenv("GITHUB_REPOSITORY")
         github_sha = os.getenv("GITHUB_SHA")
         config_directory = os.getenv("CONFIG_DIRECTORY")
-
+        
         relative_path = yaml_file.relative_to(self.config_dir)
-
         if github_server and github_repo and github_sha and config_directory:
-            return f"{github_server}/{github_repo}/blob/{github_sha}/{config_directory}/{relative_path}"
-
+            return (
+                f"{github_server.rstrip('/')}/{github_repo}/blob/{github_sha}/"
+                f"{config_directory.strip('/')}/{relative_path.as_posix()}"
+            )
         return str(relative_path)
 
     def load_config(self, config_file: Path) -> Dict[str, Any]:
