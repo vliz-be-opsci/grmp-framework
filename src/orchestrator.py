@@ -54,7 +54,27 @@ class TestOrchestrator:
         fallback_path = str(self.reports_dir.absolute())
         print(f"Using fallback path: {fallback_path}")
         return fallback_path
+
+    def _build_provenance(self, yaml_file: Path) -> str:
+        """
+        Construct a provenance string for a config file.
+        If GitHub Actions context variables are available, returns a full
+        github.com blob URL pointing to the exact commit. Otherwise falls
+        back to the path relative to the config directory.
+        """
+        github_server = os.getenv("GITHUB_SERVER_URL")
+        github_repo = os.getenv("GITHUB_REPOSITORY")
+        github_sha = os.getenv("GITHUB_SHA")
+        config_directory = os.getenv("CONFIG_DIRECTORY")
         
+        relative_path = yaml_file.relative_to(self.config_dir)
+        if github_server and github_repo and github_sha and config_directory:
+            return (
+                f"{github_server.rstrip('/')}/{github_repo}/blob/{github_sha}/"
+                f"{config_directory.strip('/')}/{relative_path.as_posix()}"
+            )
+        return str(relative_path)
+
     def load_config(self, config_file: Path) -> Dict[str, Any]:
         """Load a single YAML configuration file."""
         if not config_file.exists():
@@ -104,9 +124,9 @@ class TestOrchestrator:
                 test_name_counts[original_name] = count + 1
                 test_name_counts[test_name] = 1
 
-                # Ensure 'config' node exists and add source file
+                # Ensure 'config' node exists and add provenance
                 test_data["config"] = test_data.get("config") or {}
-                test_data["config"]["source_file"] = str(yaml_file)
+                test_data["config"]["source_file"] = self._build_provenance(yaml_file)
 
                 combined_config["tests"][test_name] = test_data
 

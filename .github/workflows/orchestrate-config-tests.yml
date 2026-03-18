@@ -2,6 +2,12 @@ name: Run Tests
 
 on: 
   workflow_dispatch:
+    inputs:
+      config_directory:
+        description: 'Test configuration directory'
+        required: true
+        default: 'config'
+        type: string
 
 jobs:
   test:
@@ -21,14 +27,20 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Run tests
+        env:
+          config_directory: ${{ github.event.inputs.config_directory }}
         run: |
           mkdir -p reports
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            -v ${{ github.workspace }}/config:/config:ro \
-            -v ${{ github.workspace }}/reports:/reports:rw \
-            -e REPORTS_HOST_PATH=${{ github.workspace }}/reports \
-            ghcr.io/${{ github.repository }}:main
+            -v "${{ github.workspace }}/${config_directory}":/config:ro \
+            -v "${{ github.workspace }}/reports":/reports:rw \
+            -e REPORTS_HOST_PATH="${{ github.workspace }}/reports" \
+            -e GITHUB_SERVER_URL="${{ github.server_url }}" \
+            -e GITHUB_REPOSITORY="${{ github.repository }}" \
+            -e GITHUB_SHA="${{ github.sha }}" \
+            -e CONFIG_DIRECTORY="${config_directory}" \
+            ghcr.io/vliz-be-opsci/grmp-framework:main
       
       - name: Upload test results
         uses: actions/upload-artifact@v4
