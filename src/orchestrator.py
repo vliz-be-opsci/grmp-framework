@@ -124,9 +124,10 @@ class TestOrchestrator:
                 test_name_counts[original_name] = count + 1
                 test_name_counts[test_name] = 1
 
-                # Ensure 'config' node exists and add provenance
+                # Ensure 'config' node exists and add provenance and issue creation flag
                 test_data["config"] = test_data.get("config") or {}
                 test_data["config"]["source_file"] = self._build_provenance(yaml_file)
+                test_data["config"].setdefault("create-issue", False)
 
                 combined_config["tests"][test_name] = test_data
 
@@ -165,6 +166,8 @@ class TestOrchestrator:
             for key, value in test_config.items():
                 if key == 'source_file':
                     env_vars['SPECIAL_SOURCE_FILE'] = str(value)
+                elif key == 'create-issue':
+                    env_vars['SPECIAL_CREATE_ISSUE'] = 'true' if str(value).lower() == 'true' else 'false'
                 elif key != 'image':
                     env_vars[f'TEST_{key.upper()}'] = str(value)
         
