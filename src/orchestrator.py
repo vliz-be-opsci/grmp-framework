@@ -5,6 +5,7 @@ Orchestrates test execution in Docker containers and combines JUnit XML reports.
 """
 
 import os
+import re
 import yaml
 import docker
 import time
@@ -16,7 +17,10 @@ import warnings
 class SecretRef:
     """Sentinel object representing a !secret tag reference in a YAML config."""
     def __init__(self, name: str):
-        self.name = name.upper()
+        normalized = name.strip().upper()
+        if not re.fullmatch(r"[A-Z][A-Z0-9_]*", normalized):
+            raise ValueError(f"Invalid !secret reference name: {name!r}")
+        self.name = normalized
 
     def __repr__(self):
         return f"SecretRef({self.name!r})"
