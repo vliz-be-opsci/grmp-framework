@@ -5,6 +5,7 @@ Orchestrates test execution in Docker containers and combines JUnit XML reports.
 """
 
 import os
+import re
 import yaml
 import docker
 import time
@@ -12,6 +13,31 @@ from pathlib import Path
 from typing import Dict, List, Any
 from junitparser import JUnitXml
 import warnings
+
+class SecretRef:
+    """Sentinel object representing a !secret tag reference in a YAML config."""
+    def __init__(self, name: str):
+        normalized = name.strip().upper()
+        if not re.fullmatch(r"[A-Z][A-Z0-9_]*", normalized):
+            raise ValueError(f"Invalid !secret reference name: {name!r}")
+        self.name = normalized
+
+    def __repr__(self):
+        return f"SecretRef({self.name!r})"
+
+
+def _secret_constructor(loader, node):
+    """PyYAML constructor for the !secret tag."""
+    return SecretRef(loader.construct_scalar(node))
+
+
+class _SecretLoader(yaml.SafeLoader):
+    """SafeLoader subclass that understands the !secret tag."""
+    pass
+
+
+_SecretLoader.add_constructor("!secret", _secret_constructor)
+
 
 class TestOrchestrator:
     def __init__(self, config_dir: str = None, reports_dir: str = None):
@@ -81,7 +107,7 @@ class TestOrchestrator:
             raise FileNotFoundError(f"Configuration file not found: {config_file}")
         
         with open(config_file, "r") as f:
-            config = yaml.safe_load(f)
+            config = yaml.load(f, Loader=_SecretLoader)
 
         print(f"Loaded configuration from {config_file}")
         return config
@@ -162,16 +188,27 @@ class TestOrchestrator:
             'TS_NAME': test_name,
         }
         
+        secret_env_vars = {}
+
         if test_config:
             for key, value in test_config.items():
                 if key == 'source_file':
                     env_vars['SPECIAL_SOURCE_FILE'] = str(value)
                 elif key == 'create-issue':
                     env_vars['SPECIAL_CREATE_ISSUE'] = 'true' if str(value).lower() == 'true' else 'false'
+                elif isinstance(value, SecretRef):
+                    secret_name = f'SECRET_{value.name}'
+                    secret_value = os.getenv(secret_name, '')
+                    if not secret_value:
+                        print(f"  Warning: secret '{secret_name}' referenced in config but not found in environment")
+                    secret_env_vars[secret_name] = secret_value
                 elif key != 'image':
                     env_vars[f'TEST_{key.upper()}'] = str(value)
-        
+
         print(f"  Environment variables: {env_vars}")
+        if secret_env_vars:
+            print(f"  Secret variables: {list(secret_env_vars.keys())} (values redacted)")
+        env_vars.update(secret_env_vars)
         
         volumes = {
             self.reports_host_path: {
