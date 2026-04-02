@@ -40,6 +40,7 @@ jobs:
             -e GITHUB_REPOSITORY="${{ github.repository }}" \
             -e GITHUB_SHA="${{ github.sha }}" \
             -e CONFIG_DIRECTORY="${config_directory}" \
+            -e SECRET_MY_API_KEY="${{ secrets.MY_API_KEY }}" \
             ghcr.io/vliz-be-opsci/grmp-framework:main
       
       - name: Upload test results
