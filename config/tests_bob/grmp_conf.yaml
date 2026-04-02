@@ -1,31 +1,55 @@
 tests:
-  input-echo-standard:
-    image: ghcr.io/vliz-be-opsci/grmp-test-implementations-input-echo-test:main
+  resource-availability-external:
+    image: ghcr.io/vliz-be-opsci/grmp-test-implementations-resource-availability:main
     config:
-      url: https://brugge-ldes.geomobility.eu/observations
+      create-issue: true
+      urls: 
+        - https://brugge-ldes.geomobility.eu/observations
+        - https://ldes.telraam-api.net/locations
       max-redirects: 3
       timeout: 10
-      check-http-availability: false
+      verify-ssl: true
+      check-http-availability: true
       check-https-availability: true
-    
-  input-echo-standard-2:
-    image: ghcr.io/vliz-be-opsci/grmp-test-implementations-input-echo-test:main
-    config:
-      url: https://brugge-ldes.geomobility.eu/observations
-      supports-content-types:
-        - text/turtle
-        - application/trig
-      check-response-body-conformity: true
 
-  input-echo-fail:
-    image: ghcr.io/vliz-be-opsci/grmp-test-implementations-input-echo-test:main
+  certificates-external:
+    image: ghcr.io/vliz-be-opsci/grmp-test-implementations-check-certificate:main
     config:
-      url:
-      supports-content-types:
-        - text/turtle
-        - application/trig
-      check-response-body-conformity: true
+      urls: 
+        - https://brugge-ldes.geomobility.eu/observations
+        - https://ldes.telraam-api.net/locations
+      timeout: 10
+      certificate-expiry-days: 30
 
-  input-echo-skip:
-    image: ghcr.io/vliz-be-opsci/grmp-test-implementations-input-echo-test:main
+  cors-compliance-external-basic:
+    image: ghcr.io/vliz-be-opsci/grmp-test-implementations-cors-compliance:main
     config:
+      urls: 
+        - http://edan.si.edu/saam/sparql
+        - http://vocab.nerc.ac.uk/sparql/sparql
+        - https://linked.bodc.ac.uk/sdn/edios/sparql/sparql
+        - https://sparql.ifremer.fr/csr/query
+
+  cors-compliance-external-advanced:
+    image: ghcr.io/vliz-be-opsci/grmp-test-implementations-cors-compliance:main
+    config:
+      urls:
+        - https://sparql.ifremer.fr/csr/query
+        - https://sparql.ifremer.fr/sextant_seadatanet/query
+      timeout: 10
+      access-control-allow-origin: '*'
+      access-control-allow-methods:
+        - GET
+        - HEAD
+        - OPTIONS
+      access-control-expose-headers:
+        - access-control-allow-credentials
+        - access-control-allow-origin
+      https-redirect: true
+
+  cors-compliance-external-prevent-masked-errors:
+    image: ghcr.io/vliz-be-opsci/grmp-test-implementations-cors-compliance:main
+    config:
+      urls: 
+        - http://edan.si.edu/saam/sparql
+      probe-origin: http://edan.si.edu
