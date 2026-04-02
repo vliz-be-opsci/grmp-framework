@@ -11,6 +11,7 @@ services:
     environment:
       - CONFIG_DIR=/config
       - REPORTS_HOST_PATH=${REPORTS_HOST_PATH}
+      - SECRET_MY_API_KEY=supersecretkey
     working_dir: /app
     networks:
       - test-network

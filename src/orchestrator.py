@@ -17,7 +17,7 @@ import warnings
 class SecretRef:
     """Sentinel object representing a !secret tag reference in a YAML config."""
     def __init__(self, name: str):
-        normalized = name.strip().upper()
+        normalized = name.strip().upper().replace("-", "_")
         if not re.fullmatch(r"[A-Z][A-Z0-9_]*", normalized):
             raise ValueError(f"Invalid !secret reference name: {name!r}")
         self.name = normalized
